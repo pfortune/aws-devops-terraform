@@ -3,3 +3,6 @@ instance_type =
 ami_id        = 
 servers       = 
 pem_key       = 
+prefix        = 
+tags          = 
+user_data =

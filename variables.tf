@@ -26,3 +26,19 @@ variable "pem_key" {
   sensitive   = true
 }
 
+variable "prefix" {
+  type        = string
+  description = "The prefix to use for all resource names."
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "A map of tags to apply to all resources."
+  default     = {}
+}
+
+variable "user_data" {
+  type        = string
+  description = "The user data to apply to the EC2 instances."
+  default     = ""
+}
