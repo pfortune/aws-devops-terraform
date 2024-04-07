@@ -20,6 +20,12 @@ variable "servers" {
   description = "The number of instances to launch."
 }
 
+variable "server_port" {
+  type        = number
+  description = "The port the server will use for HTTP requests."
+  default     = 8080
+}
+
 variable "pem_key" {
   type        = string
   description = "The name of the PEM key to use for EC2 instances."
