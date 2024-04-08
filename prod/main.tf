@@ -42,7 +42,7 @@ resource "aws_security_group" "instance" {
 }
 
 # Launch configuration for instances, including user data for initial setup
-resource "aws_launch_configuration" "example" {
+resource "aws_launch_configuration" "server" {
   image_id        = var.ami_id
   instance_type   = var.instance_type
   security_groups = [aws_security_group.instance.id]
@@ -59,8 +59,8 @@ resource "aws_launch_configuration" "example" {
 }
 
 # Auto Scaling Group configuration, targeting the private subnets of the VPC
-resource "aws_autoscaling_group" "example" {
-  launch_configuration = aws_launch_configuration.example.name
+resource "aws_autoscaling_group" "server" {
+  launch_configuration = aws_launch_configuration.server.name
   vpc_zone_identifier  = module.vpc.private_subnets # Use private subnets for the ASG
 
   target_group_arns = [aws_lb_target_group.asg.arn]
@@ -71,14 +71,14 @@ resource "aws_autoscaling_group" "example" {
 
   tag {
     key                 = "Name"
-    value               = "${var.prefix}-asg-example"
+    value               = "${var.prefix}-asg-server"
     propagate_at_launch = true # Ensure tags are propagated to instances launched by the ASG
   }
 }
 
 # Application Load Balancer setup, associated with public subnets of the VPC
-resource "aws_lb" "example" {
-  name               = "terraform-asg-example"
+resource "aws_lb" "server" {
+  name               = "terraform-asg-server"
   load_balancer_type = "application"
   subnets            = module.vpc.public_subnets # Place the ALB in public subnets for external access
   security_groups    = [aws_security_group.alb.id]
@@ -86,7 +86,7 @@ resource "aws_lb" "example" {
 
 # Listener for the ALB, directing HTTP traffic
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.example.arn
+  load_balancer_arn = aws_lb.server.arn
   port              = 80
   protocol          = "HTTP"
 
@@ -102,7 +102,7 @@ resource "aws_lb_listener" "http" {
 
 # Security group for the ALB, allowing inbound HTTP traffic and unrestricted outbound traffic
 resource "aws_security_group" "alb" {
-  name   = "${var.prefix}-example-alb"
+  name   = "${var.prefix}-server-alb"
   vpc_id = module.vpc.vpc_id # Associate with the created VPC
 
   ingress {
@@ -122,7 +122,7 @@ resource "aws_security_group" "alb" {
 
 # Target group for the ASG instances, with health check configurations
 resource "aws_lb_target_group" "asg" {
-  name     = "terraform-asg-example"
+  name     = "terraform-asg"
   port     = var.server_port
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
