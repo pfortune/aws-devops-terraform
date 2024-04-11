@@ -1,7 +1,7 @@
 # State Management
 
 ## Overview
-The `state` directory manages the Terraform state for this project, ensuring state is stored securely and consistently with locking to prevent conflicts.
+The `global/s3` directory manages the Terraform state for this project, ensuring state is stored securely and consistently with locking to prevent conflicts.
 
 ## Files
 - `main.tf` - Configures the Terraform backend using AWS S3 and DynamoDB for state locking.

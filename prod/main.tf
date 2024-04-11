@@ -122,7 +122,7 @@ resource "aws_security_group" "alb" {
 
 # Target group for the ASG instances, with health check configurations
 resource "aws_lb_target_group" "asg" {
-  name     = "terraform-asg"
+  name     = "terraform-asg-server"
   port     = var.server_port
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
