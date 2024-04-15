@@ -28,6 +28,17 @@ module "vpc" {
   }
 }
 
+data "aws_ami" "latest_master_web_server" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["Master-Web-Server-AMI-*"]
+  }
+
+  owners = ["self"] 
+}
+
 # Security group for instances, allowing inbound TCP traffic on the server port
 resource "aws_security_group" "instance" {
   name   = "${var.prefix}-instance"
@@ -43,7 +54,7 @@ resource "aws_security_group" "instance" {
 
 # Launch configuration for instances, including user data for initial setup
 resource "aws_launch_configuration" "server" {
-  image_id        = var.ami_id
+  image_id        = data.aws_ami.latest_master_web_server.id
   instance_type   = var.instance_type
   security_groups = [aws_security_group.instance.id]
 
