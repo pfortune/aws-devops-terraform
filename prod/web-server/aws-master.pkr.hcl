@@ -34,16 +34,17 @@ build {
 
   provisioner "shell" {
     inline = [
+      "set -e",
       "sudo yum update -y",
-      "sudo yum install -y httpd",
+      "sudo yum install -y httpd || { echo 'Failed to install httpd'; exit 1; }",
       "sudo systemctl enable httpd",
       "sudo systemctl start httpd",
-      "echo 'Hello World' | sudo tee /var/www/html/index.html"
+      "echo 'Hello World' | sudo tee /var/www/html/index.html",
+      "sudo yum clean all"
     ]
   }
 
   post-processor "manifest" {
     output = "manifest.json"
   }
-
 }

@@ -1,9 +1,0 @@
-region        = 
-instance_type = 
-ami_id        = 
-servers       = 
-pem_key       = 
-server_port   =
-prefix        = 
-tags          = 
-user_data     =

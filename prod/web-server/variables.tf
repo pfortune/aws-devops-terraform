@@ -48,3 +48,26 @@ variable "user_data" {
   description = "The user data to apply to the EC2 instances."
   default     = ""
 }
+
+variable "email" {
+  type        = string
+  description = "The email address to notify when changes are applied."
+}
+
+variable "min_size" {
+  type        = number
+  description = "The minimum number of instances in the autoscaling group."
+  default     = 1
+}
+
+variable "max_size" {
+  type        = number
+  description = "The maximum number of instances in the autoscaling group."
+  default     = 3
+}
+
+variable "desired_capacity" {
+  type        = number
+  description = "The desired number of instances in the autoscaling group."
+  default     = 2
+}

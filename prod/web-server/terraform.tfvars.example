@@ -1,0 +1,16 @@
+region           = 
+instance_type    = 
+ami_id           = 
+servers          = 
+pem_key          = 
+prefix           = 
+server_port      = 8080
+email            = 
+min_size         = 1
+max_size         = 3
+desired_capacity = 2
+tags = {
+  Name        = "Example instance"
+  Terraform   = "true"
+  Environment = "prod"
+}
