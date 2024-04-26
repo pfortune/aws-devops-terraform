@@ -8,7 +8,7 @@ terraform {
 
   backend "s3" {
     bucket = "terraform-state-devops-2024"
-    key    = "prod/web-server/terraform.tfstate"
+    key    = "prod/vpc/terraform.tfstate"
     region = "us-east-1"
 
     dynamodb_table = "terraform-state-lock-devops-2024"

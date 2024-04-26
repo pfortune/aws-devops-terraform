@@ -8,7 +8,7 @@ packer {
 }
 
 source "amazon-ebs" "amazon_linux" {
-  ami_name      = "Master-Web-Server-AMI-${local.timestamp}"
+  ami_name      = "Master-DB-AMI-${local.timestamp}"
   instance_type = "t2.nano"
   region        = "us-east-1"
   source_ami_filter {
@@ -32,21 +32,13 @@ build {
     "source.amazon-ebs.amazon_linux"
   ]
 
-  provisioner "file" {
-    source      = "mem.sh"
-    destination = "/tmp/mem.sh"
-  }
-
   provisioner "shell" {
     inline = [
       "sudo yum update -y",
-      "sudo yum install -y httpd net-tools nodejs sysstat cronie cronie-anacron git-all",
-      "sudo systemctl enable httpd",
-      "sudo systemctl start httpd",
-      "echo 'Hello World' | sudo tee /var/www/html/index.html",
-      "sudo mv /tmp/mem.sh /usr/local/bin/mem.sh",
-      "sudo chmod +x /usr/local/bin/mem.sh",
-      "(crontab -l 2>/dev/null; echo '*/1 * * * * /usr/local/bin/mem.sh') | crontab -"
+      "sudo yum install -y docker",
+      "sudo service docker start",
+      "sudo docker pull mongo:latest",
+      "sudo docker run --name mongodb -d -p 27017:27017 mongo:latest"
     ]
   }
 
@@ -54,4 +46,3 @@ build {
     output = "manifest.json"
   }
 }
-

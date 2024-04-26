@@ -20,26 +20,6 @@ locals {
 }
 
 /* ===================================================================
-   VPC Configuration
-   =================================================================== */
-# Deploy a Virtual Private Cloud (VPC) with subnet definitions and internet gateways
-module "vpc" {
-  source               = "terraform-aws-modules/vpc/aws"
-  name                 = "devops-vpc"
-  cidr                 = "10.0.0.0/16"
-  azs                  = ["${var.region}a", "${var.region}b", "${var.region}c"]
-  private_subnets      = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets       = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  enable_nat_gateway   = true
-  enable_vpn_gateway   = true
-  enable_dns_hostnames = true
-  tags = {
-    Terraform   = "true"
-    Environment = "dev"
-  }
-}
-
-/* ===================================================================
    Remote State Access
    =================================================================== */
 # Configure access to the remote state in S3 for cross-referencing other infrastructure elements
@@ -48,6 +28,15 @@ data "terraform_remote_state" "db" {
   config = {
     bucket = "terraform-state-devops-2024"
     key    = "prod/db/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+data "terraform_remote_state" "vpc" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-devops-2024"
+    key    = "prod/vpc/terraform.tfstate"
     region = "us-east-1"
   }
 }
@@ -95,7 +84,7 @@ module "bastion" {
   ami                         = data.aws_ami.latest_amazon_linux.id
   instance_type               = var.instance_type
   key_name                    = var.pem_key
-  subnet_id                   = module.vpc.public_subnets[0]
+  subnet_id                   = data.terraform_remote_state.vpc.outputs.public_subnets[0]
   associate_public_ip_address = true
   vpc_security_group_ids      = [module.ssh_security_group.security_group_id, module.egress_security_group.security_group_id]
   tags = merge({
@@ -115,7 +104,7 @@ module "egress_security_group" {
   source             = "terraform-aws-modules/security-group/aws"
   name               = "${var.prefix}-all-egress"
   description        = "Allow all egress"
-  vpc_id             = module.vpc.vpc_id
+  vpc_id             = data.terraform_remote_state.vpc.outputs.vpc_id
   egress_cidr_blocks = local.all_ips
   egress_rules       = ["all-all"]
   tags = {
@@ -127,7 +116,7 @@ module "http_security_group" {
   source              = "terraform-aws-modules/security-group/aws"
   name                = "${var.prefix}-http"
   description         = "Allow all HTTP and HTTPS ingress"
-  vpc_id              = module.vpc.vpc_id
+  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   ingress_cidr_blocks = local.all_ips
   ingress_rules       = ["http-80-tcp", "https-443-tcp"]
   tags = {
@@ -139,7 +128,7 @@ module "ssh_security_group" {
   source              = "terraform-aws-modules/security-group/aws"
   name                = "${var.prefix}-ssh"
   description         = "Allow all SSH ingress"
-  vpc_id              = module.vpc.vpc_id
+  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   ingress_cidr_blocks = ["${chomp(data.http.myip.response_body)}/32"]
   ingress_rules       = ["ssh-tcp"]
   tags = {
@@ -151,7 +140,7 @@ module "ssh_bastion_security_group" {
   source              = "terraform-aws-modules/security-group/aws"
   name                = "${var.prefix}-ssh-bastion"
   description         = "Allow all SSH ingress from bastion"
-  vpc_id              = module.vpc.vpc_id
+  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   ingress_cidr_blocks = ["${module.bastion.private_ip}/32"]
   ingress_rules       = ["ssh-tcp"]
   tags = {
@@ -167,8 +156,8 @@ module "alb" {
   source                     = "terraform-aws-modules/alb/aws"
   name                       = "${var.prefix}-alb"
   load_balancer_type         = "application"
-  vpc_id                     = module.vpc.vpc_id
-  subnets                    = module.vpc.public_subnets
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+  subnets                    = data.terraform_remote_state.vpc.outputs.public_subnets
   enable_deletion_protection = false
   create_security_group      = false
   security_groups            = [module.http_security_group.security_group_id, module.egress_security_group.security_group_id]
@@ -182,7 +171,7 @@ resource "aws_lb_target_group" "target_group-http" {
   port        = local.http_port
   protocol    = "HTTP"
   target_type = "instance"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
   health_check {
     path                = "/"
     protocol            = "HTTP"
@@ -210,16 +199,16 @@ resource "aws_lb_listener" "load_balancer-http" {
    =================================================================== */
 # Define the auto scaling group, attach it to the load balancer, and configure scaling policies
 module "auto_scaling_group" {
-  source                      = "terraform-aws-modules/autoscaling/aws"
-  name                        = "${var.prefix}-asg"
-  min_size                    = var.min_size
-  max_size                    = var.max_size
-  desired_capacity            = var.desired_capacity
-  
-  vpc_zone_identifier         = module.vpc.private_subnets
-  target_group_arns           = [aws_lb_target_group.target_group-http.arn]
-  health_check_type           = "ELB"
-  health_check_grace_period   = 30
+  source           = "terraform-aws-modules/autoscaling/aws"
+  name             = "${var.prefix}-asg"
+  min_size         = var.min_size
+  max_size         = var.max_size
+  desired_capacity = var.desired_capacity
+
+  vpc_zone_identifier       = data.terraform_remote_state.vpc.outputs.private_subnets
+  target_group_arns         = [aws_lb_target_group.target_group-http.arn]
+  health_check_type         = "ELB"
+  health_check_grace_period = 30
 
   launch_template_name        = "${var.prefix}-launch-template"
   launch_template_description = "Launch template for Board Buddy app"
@@ -309,4 +298,11 @@ resource "aws_sns_topic_subscription" "autoscaling_notifications_subscription" {
   topic_arn = aws_sns_topic.autoscaling_notifications.arn
   protocol  = "email"
   endpoint  = var.email
+}
+
+/* ===================================================================
+   GuardDuty Configuration
+   =================================================================== */
+resource "aws_guardduty_detector" "Detector" {
+  enable = true
 }
