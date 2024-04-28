@@ -229,6 +229,7 @@ module "auto_scaling_group" {
   user_data = base64encode(var.user_data)
   key_name          = var.pem_key
   enable_monitoring = true
+  create_iam_instance_profile = false
   tags = {
     Name = "${var.prefix}-asg"
   }
@@ -260,7 +261,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_up_alarm" {
   alarm_name          = "${var.prefix}-high-cpu-alarm"
   alarm_description   = "Scale up triggered when CPU utilization is above 70%"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 5
+  evaluation_periods  = 3
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
   period              = 60
@@ -277,7 +278,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
   alarm_name          = "${var.prefix}-low-cpu-alarm"
   alarm_description   = "Scale down triggered when CPU utilization is below 25%"
   comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = 5
+  evaluation_periods  = 3
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
   period              = 60
