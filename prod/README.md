@@ -1,9 +1,9 @@
 # Production Environment
 
 ## Overview
-The `web-server` directory contains Terraform configurations for deploying the production infrastructure on AWS, including networking, compute, and security resources. This setup uses custom AMIs built with Packer.
+The `prod` directory contains Terraform configurations for deploying the production infrastructure on AWS, including networking, compute, and security resources. This setup uses custom AMIs built with Packer.
 
-## Files
+## Files within web-server directory
 - `main.tf` - Defines the AWS resources and modules for the production environment.
 - `outputs.tf` - Specifies output variables for the production environment.
 - `variables.tf` - Contains variable declarations for customisation.
