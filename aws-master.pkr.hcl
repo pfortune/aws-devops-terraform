@@ -23,10 +23,6 @@ source "amazon-ebs" "amazon_linux" {
   ssh_username = "ec2-user"
 }
 
-locals {
-  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
-}
-
 build {
   sources = [
     "source.amazon-ebs.amazon_linux"
@@ -40,10 +36,11 @@ build {
   provisioner "shell" {
     inline = [
       "sudo yum update -y",
-      "sudo yum install -y httpd net-tools nodejs sysstat cronie cronie-anacron git-all",
+      "sudo yum install -y httpd net-tools sysstat cronie cronie-anacron",
       "sudo systemctl enable httpd",
       "sudo systemctl start httpd",
       "echo 'Hello World' | sudo tee /var/www/html/index.html",
+      "sudo yum clean al",
       "sudo mv /tmp/mem.sh /usr/local/bin/mem.sh",
       "sudo chmod +x /usr/local/bin/mem.sh",
       "(crontab -l 2>/dev/null; echo '*/1 * * * * /usr/local/bin/mem.sh') | crontab -"
@@ -51,7 +48,6 @@ build {
   }
 
   post-processor "manifest" {
-    output = "manifest.json"
+    output = "../manifest.json"
   }
 }
-

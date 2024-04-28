@@ -1,0 +1,12 @@
+[Unit]
+Description=Node.js Board Buddy App Server
+
+[Service]
+ExecStart=/home/ec2-user/.nvm/versions/node/v16.20.2/bin/node /var/www/boardbuddy/src/server.js
+Restart=always
+User=ec2-user
+Environment=PATH=/home/ec2-user/.nvm/versions/node/v16.20.2/bin:$PATH
+WorkingDirectory=/var/www/boardbuddy
+
+[Install]
+WantedBy=multi-user.target

@@ -20,10 +20,10 @@ variable "servers" {
   description = "The number of instances to launch."
 }
 
-variable "server_port" {
+variable "app_port" {
   type        = number
   description = "The port the server will use for HTTP requests."
-  default     = 8080
+  default     = 3000
 }
 
 variable "pem_key" {

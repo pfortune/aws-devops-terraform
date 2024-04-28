@@ -23,15 +23,6 @@ locals {
    Remote State Access
    =================================================================== */
 # Configure access to the remote state in S3 for cross-referencing other infrastructure elements
-data "terraform_remote_state" "db" {
-  backend = "s3"
-  config = {
-    bucket = "terraform-state-devops-2024"
-    key    = "prod/db/terraform.tfstate"
-    region = "us-east-1"
-  }
-}
-
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
@@ -108,7 +99,8 @@ module "egress_security_group" {
   egress_cidr_blocks = local.all_ips
   egress_rules       = ["all-all"]
   tags = {
-    Name = "${var.prefix}-egress_sg"
+    Name = "${var.prefix}-all-egress"
+    Security-Group-Name = "${var.prefix}-egress_sg"
   }
 }
 
@@ -119,10 +111,21 @@ module "http_security_group" {
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   ingress_cidr_blocks = local.all_ips
   ingress_rules       = ["http-80-tcp", "https-443-tcp"]
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = var.app_port
+      to_port     = var.app_port
+      protocol    = local.any_protocol
+      description = "Node port"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
   tags = {
     Name = "${var.prefix}-http"
+    Security-Group-Name = "${var.prefix}-http"
   }
 }
+
 
 module "ssh_security_group" {
   source              = "terraform-aws-modules/security-group/aws"
@@ -133,6 +136,7 @@ module "ssh_security_group" {
   ingress_rules       = ["ssh-tcp"]
   tags = {
     Name = "${var.prefix}-ssh"
+    Security-Group-Name = "${var.prefix}-ssh"
   }
 }
 
@@ -144,7 +148,7 @@ module "ssh_bastion_security_group" {
   ingress_cidr_blocks = ["${module.bastion.private_ip}/32"]
   ingress_rules       = ["ssh-tcp"]
   tags = {
-    Name = "${var.prefix}-ssh-bastion"
+    Security-Group-Name = "${var.prefix}-ssh-bastion"
   }
 }
 
@@ -168,14 +172,14 @@ module "alb" {
 
 resource "aws_lb_target_group" "target_group-http" {
   name        = "${var.prefix}-tg"
-  port        = local.http_port
+  port        = var.app_port
   protocol    = "HTTP"
   target_type = "instance"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
   health_check {
     path                = "/"
     protocol            = "HTTP"
-    port                = local.http_port
+    port                = var.app_port
     healthy_threshold   = 3
     unhealthy_threshold = 3
     timeout             = 4
@@ -220,9 +224,9 @@ module "auto_scaling_group" {
     module.egress_security_group.security_group_id
   ]
 
-  image_id          = data.aws_ami.latest_master_web_server.id
-  instance_type     = var.instance_type
-  user_data         = base64encode(var.user_data)
+  image_id      = data.aws_ami.latest_master_web_server.id
+  instance_type = var.instance_type
+  user_data = base64encode(var.user_data)
   key_name          = var.pem_key
   enable_monitoring = true
   tags = {
