@@ -1,7 +1,7 @@
 # Production Environment
 
 ## Overview
-The `prod` directory contains Terraform configurations for deploying the production infrastructure on AWS, including networking, compute, and security resources. This setup uses custom AMIs built with Packer.
+The `web-server` directory contains Terraform configurations for deploying the production infrastructure on AWS, including networking, compute, and security resources. This setup uses custom AMIs built with Packer.
 
 ## Files
 - `main.tf` - Defines the AWS resources and modules for the production environment.
@@ -9,7 +9,14 @@ The `prod` directory contains Terraform configurations for deploying the product
 - `variables.tf` - Contains variable declarations for customisation.
 - `versions.tf` - Specifies the required Terraform and provider versions.
 - `terraform.tfvars.example` - An example variables file to be copied and filled out as `terraform.tfvars`.
+- `user_data.sh` - User data script for the EC2 instances.
+
+In the `packer` directory:
 - `aws-master.pkr.hcl` - Packer template to build the custom AMI used in Terraform.
+- `buddyservice.service` - Systemd service file for the Buddy Service.
+- `mem.sh` - Shell script with custom CloudWatch metrics.
+- `variables.pkr.hcl` - Packer variables file.
+- `secrets.auto.pkrvars.hcl.example` - Packer variables file with sensitive data.
 
 ## Setup
 ### Packer AMI Build
