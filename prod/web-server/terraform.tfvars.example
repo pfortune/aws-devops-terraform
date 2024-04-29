@@ -1,16 +1,19 @@
-region           = 
-instance_type    = 
-ami_id           = 
-servers          = 
-pem_key          = 
-prefix           = 
-server_port      = 8080
-email            = 
+region        = "us-east-1"
+instance_type = "t2.nano"
+servers       = 3
+pem_key       = ""
+prefix        = ""
+app_port      = 3000
+email         = ""
+ami_id        = ""
+
 min_size         = 1
-max_size         = 3
+max_size         = 5
 desired_capacity = 2
+instance_profile_arn = ""
+
 tags = {
-  Name        = "Example instance"
+  Name        = "Terraform instance"
   Terraform   = "true"
   Environment = "prod"
 }

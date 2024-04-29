@@ -126,7 +126,6 @@ module "http_security_group" {
   }
 }
 
-
 module "ssh_security_group" {
   source              = "terraform-aws-modules/security-group/aws"
   name                = "${var.prefix}-ssh"
@@ -229,7 +228,9 @@ module "auto_scaling_group" {
   user_data = base64encode(var.user_data)
   key_name          = var.pem_key
   enable_monitoring = true
+
   create_iam_instance_profile = false
+  iam_instance_profile_arn    = var.instance_profile_arn
   tags = {
     Name = "${var.prefix}-asg"
   }
@@ -261,10 +262,10 @@ resource "aws_cloudwatch_metric_alarm" "scale_up_alarm" {
   alarm_name          = "${var.prefix}-high-cpu-alarm"
   alarm_description   = "Scale up triggered when CPU utilization is above 70%"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 3
+  evaluation_periods  = 1
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = 60
+  period              = 30
   statistic           = "Average"
   threshold           = 70
   dimensions = {
@@ -278,10 +279,10 @@ resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
   alarm_name          = "${var.prefix}-low-cpu-alarm"
   alarm_description   = "Scale down triggered when CPU utilization is below 25%"
   comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = 3
+  evaluation_periods  = 1
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = 60
+  period              = 30
   statistic           = "Average"
   threshold           = 25
   dimensions = {

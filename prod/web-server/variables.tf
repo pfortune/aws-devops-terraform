@@ -68,3 +68,8 @@ variable "desired_capacity" {
   type        = number
   description = "The desired number of instances in the autoscaling group."
 }
+
+variable "instance_profile_arn" {
+  type        = string
+  description = "The ARN of the instance profile to attach to the EC2 instances."
+}
